@@ -1,3 +1,5 @@
+const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
+
 require('dotenv').config(); // ✅ Load env vars FIRST
 
 const express = require('express');
