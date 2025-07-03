@@ -1,53 +1,44 @@
 const express = require('express');
-const fetch = require('node-fetch');
-const cors = require('cors');
 const bodyParser = require('body-parser');
-require('dotenv').config();
-
+const axios = require('axios');
 const app = express();
-app.use(cors());
+const PORT = process.env.PORT || 10000;
+
 app.use(bodyParser.json());
 
-const PORT = process.env.PORT || 3000;
-const GROK_API_KEY = process.env.GROK_API_KEY;
-
-app.post('/api/chat', async (req, res) => {
+app.post('/generate', async (req, res) => {
   try {
-    const { message, visitorId, email, page } = req.body;
+    const { prompt } = req.body;
 
-    const prompt = `
-You are MOBY, an AI sales assistant for MobyCap. You guide business owners through the funding process. Your job:
-1. Ask one qualification question at a time.
-2. Detect objections like: pricing concerns, already funded, trust issues.
-3. Overcome objections with logic, case studies, or confident reframing.
-4. Never give terms or funding amounts. When qualified, tell them you'll send a secure application link.
-5. Always end with a question to keep the conversation going.
-    `;
+    if (!prompt) {
+      return res.status(400).json({ error: 'Prompt is required' });
+    }
 
-    const grokResponse = await fetch('https://api.x.ai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${GROK_API_KEY}`,
-        'Content-Type': 'application/json'
+    const response = await axios.post(
+      'https://api.openai.com/v1/chat/completions',
+      {
+        model: 'gpt-4',
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.7,
       },
-      body: JSON.stringify({
-        model: 'grok-1.5',
-        stream: false,
-        messages: [
-          { role: 'system', content: prompt },
-          { role: 'user', content: message }
-        ]
-      })
-    });
+      {
+        headers: {
+          'Authorization': `Bearer ${process.env.XAI_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
 
-    const result = await grokResponse.json();
-    const reply = result.choices?.[0]?.message?.content || "Sorry, I didn’t understand that.";
-
-    res.json({ message: reply });
+    const result = response.data.choices[0].message.content;
+    res.json({ response: result });
   } catch (error) {
-    console.error('Error:', error);
-    res.status(500).json({ message: 'Internal Server Error' });
+    console.error(error.response?.data || error.message);
+    res.status(500).json({ error: 'Internal Server Error' });
   }
+});
+
+app.get('/', (req, res) => {
+  res.send('MobyCap AI backend is running.');
 });
 
 app.listen(PORT, () => {
