@@ -32,6 +32,7 @@ app.post('/ask', async (req, res) => {
   if (!prompt) {
     return res.status(400).json({ error: 'Prompt is required' });
   }
+console.log('🧪 Incoming Tidio request - GROK_API_KEY:', GROK_API_KEY);
 
   if (!GROK_API_KEY) {
     return res.status(500).json({ error: 'Grok API key is not configured' });
