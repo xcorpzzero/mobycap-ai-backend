@@ -1,16 +1,19 @@
-console.log("MongoDB URI:", process.env.MONGODB_URI);
-
+require('dotenv').config(); // ✅ Load env vars FIRST
 
 const express = require('express');
 const mongoose = require('mongoose');
-const dotenv = require('dotenv');
+const fetch = require('node-fetch'); // ✅ Ensure this is imported if not already
 
-dotenv.config();
+// ✅ Now safely access env vars
+const MONGODB_URI = process.env.MONGODB_URI;
+const GROK_API_KEY = process.env.GROK_API_KEY;
+const GROK_API_URL = 'https://api.x.ai/v1/chat/completions';
 
-console.log('✅ MONGODB_URI loaded:', process.env.MONGODB_URI);
+console.log('✅ MONGODB_URI loaded:', MONGODB_URI ? 'Found' : '❌ Not Found');
+console.log('✅ Grok API Key loaded:', GROK_API_KEY ? 'Found' : '❌ Not Found');
 
-// Connect to MongoDB
-mongoose.connect(process.env.MONGODB_URI, {
+// ✅ MongoDB connect
+mongoose.connect(MONGODB_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 })
@@ -21,9 +24,8 @@ const app = express();
 app.use(express.json());
 
 const PORT = process.env.PORT || 3000;
-const GROK_API_KEY = process.env.GROK_API_KEY;
-const GROK_API_URL = 'https://api.x.ai/v1/chat/completions'; // Confirmed endpoint
 
+// ✅ POST /ask endpoint
 app.post('/ask', async (req, res) => {
   const { prompt } = req.body;
 
@@ -43,11 +45,11 @@ app.post('/ask', async (req, res) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'grok-3', // Verify model name in docs
-         messages: [
-    {
-      role: 'system',
-      content: `You are Moby, the AI assistant for MobyCap.
+        model: 'grok-3',
+        messages: [
+          {
+            role: 'system',
+            content: `You are Moby, the AI assistant for MobyCap.
 
 Tone: Professional, clear, direct, supportive.
 
@@ -67,12 +69,12 @@ Q: Do you require collateral?
 A: No. Our funding is revenue-based and doesn’t require fixed assets or personal guarantees.
 
 Begin answering user queries below.`
-    },
-    {
-      role: 'user',
-      content: prompt
-    }
-  ],
+          },
+          {
+            role: 'user',
+            content: prompt
+          }
+        ],
       }),
     });
 
@@ -91,7 +93,7 @@ Begin answering user queries below.`
 
     res.json({ result: answer });
   } catch (err) {
-    console.error('API error:', err.message);
+    console.error('❌ API error:', err.message);
     res.status(500).json({ error: 'Failed to get response from Grok API' });
   }
 });
