@@ -1,9 +1,13 @@
-require('dotenv').config(); // ✅ Load env vars FIRST
+// Load environment variables first
+require('dotenv').config();
+
+// Polyfill fetch (Node 18+ includes fetch, but this ensures cross-version support)
+const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
 
 const express = require('express');
 const mongoose = require('mongoose');
 
-// ✅ Now safely access env vars
+// Access environment variables
 const MONGODB_URI = process.env.MONGODB_URI;
 const XAI_API_KEY = process.env.XAI_API_KEY;
 const XAI_API_URL = 'https://api.x.ai/v1/chat/completions';
@@ -11,7 +15,7 @@ const XAI_API_URL = 'https://api.x.ai/v1/chat/completions';
 console.log('✅ MONGODB_URI loaded:', MONGODB_URI ? 'Found' : '❌ Not Found');
 console.log('✅ XAI API Key loaded:', XAI_API_KEY ? 'Found' : '❌ Not Found');
 
-// ✅ MongoDB connect
+// Connect to MongoDB
 mongoose.connect(MONGODB_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
@@ -24,14 +28,15 @@ app.use(express.json());
 
 const PORT = process.env.PORT || 3000;
 
-// ✅ POST /ask endpoint
+// POST /ask endpoint for Tidio
 app.post('/ask', async (req, res) => {
   const { prompt } = req.body;
 
   if (!prompt) {
     return res.status(400).json({ error: 'Prompt is required' });
   }
-console.log('🧪 Incoming Tidio request - XAI_API_KEY:', XAI_API_KEY);
+
+  console.log('🧪 Incoming Tidio request - XAI_API_KEY:', XAI_API_KEY ? 'Found' : 'Missing');
 
   if (!XAI_API_KEY) {
     return res.status(500).json({ error: 'XAI API key is not configured' });
@@ -91,7 +96,9 @@ Begin answering user queries below.`
       return res.status(500).json({ error: 'Unexpected response format from XAI API', data });
     }
 
-    res.json({ result: answer });
+    // ✅ Tidio expects the key to be `reply`
+    res.json({ reply: answer });
+
   } catch (err) {
     console.error('❌ API error:', err.message);
     res.status(500).json({ error: 'Failed to get response from XAI API' });
