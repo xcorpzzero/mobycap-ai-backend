@@ -5,11 +5,11 @@ const mongoose = require('mongoose');
 
 // ✅ Now safely access env vars
 const MONGODB_URI = process.env.MONGODB_URI;
-const GROK_API_KEY = process.env.GROK_API_KEY;
-const GROK_API_URL = 'https://api.x.ai/v1/chat/completions';
+const XAI_API_KEY = process.env.XAI_API_KEY;
+const XAI_API_URL = 'https://api.x.ai/v1/chat/completions';
 
 console.log('✅ MONGODB_URI loaded:', MONGODB_URI ? 'Found' : '❌ Not Found');
-console.log('✅ Grok API Key loaded:', GROK_API_KEY ? 'Found' : '❌ Not Found');
+console.log('✅ XAI API Key loaded:', XAI_API_KEY ? 'Found' : '❌ Not Found');
 
 // ✅ MongoDB connect
 mongoose.connect(MONGODB_URI, {
@@ -31,17 +31,17 @@ app.post('/ask', async (req, res) => {
   if (!prompt) {
     return res.status(400).json({ error: 'Prompt is required' });
   }
-console.log('🧪 Incoming Tidio request - GROK_API_KEY:', GROK_API_KEY);
+console.log('🧪 Incoming Tidio request - XAI_API_KEY:', XAI_API_KEY);
 
-  if (!GROK_API_KEY) {
-    return res.status(500).json({ error: 'Grok API key is not configured' });
+  if (!XAI_API_KEY) {
+    return res.status(500).json({ error: 'XAI API key is not configured' });
   }
 
   try {
-    const response = await fetch(GROK_API_URL, {
+    const response = await fetch(XAI_API_URL, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${GROK_API_KEY}`,
+        'Authorization': `Bearer ${XAI_API_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -80,7 +80,7 @@ Begin answering user queries below.`
 
     if (!response.ok) {
       const errorData = await response.json();
-      return res.status(response.status).json({ error: 'Grok API error', details: errorData });
+      return res.status(response.status).json({ error: 'XAI API error', details: errorData });
     }
 
     const data = await response.json();
@@ -88,13 +88,13 @@ Begin answering user queries below.`
 
     const answer = data.response || data.text || data.choices?.[0]?.message?.content;
     if (!answer) {
-      return res.status(500).json({ error: 'Unexpected response format from Grok API', data });
+      return res.status(500).json({ error: 'Unexpected response format from XAI API', data });
     }
 
     res.json({ result: answer });
   } catch (err) {
     console.error('❌ API error:', err.message);
-    res.status(500).json({ error: 'Failed to get response from Grok API' });
+    res.status(500).json({ error: 'Failed to get response from XAI API' });
   }
 });
 
