@@ -1,10 +1,7 @@
-const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
-
 require('dotenv').config(); // ✅ Load env vars FIRST
 
 const express = require('express');
 const mongoose = require('mongoose');
-const fetch = require('node-fetch'); // ✅ Ensure this is imported if not already
 
 // ✅ Now safely access env vars
 const MONGODB_URI = process.env.MONGODB_URI;
